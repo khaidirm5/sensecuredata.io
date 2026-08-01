@@ -1,8 +1,8 @@
 from sqlalchemy import create_engine
 
-from app.config.settings import DATABASE_URL
+from app.config.settings import settings
 
 engine = create_engine(
-    DATABASE_URL,
+    settings.database_url,
     echo=True,
 )
