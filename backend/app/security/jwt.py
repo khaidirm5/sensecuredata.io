@@ -30,6 +30,8 @@ def create_access_token(
 
 
 def decode_access_token(token: str) -> dict[str, Any]:
+    """Validate and decode a JWT access token."""
+
     try:
         return jwt.decode(
             token,
