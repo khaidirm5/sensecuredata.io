@@ -24,3 +24,20 @@ class UserResponse(BaseModel):
     username: str
     email: EmailStr
     is_active: bool
+
+
+class UserLogin(BaseModel):
+    """Schema for user login requests."""
+
+    email: EmailStr
+    password: str = Field(
+        min_length=8,
+        max_length=255,
+    )
+
+
+class Token(BaseModel):
+    """Schema returned after successful authentication."""
+
+    access_token: str
+    token_type: str = "bearer"
