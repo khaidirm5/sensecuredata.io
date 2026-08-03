@@ -23,6 +23,7 @@ class UserResponse(BaseModel):
     id: int
     username: str
     email: EmailStr
+    role: str
     is_active: bool
 
 
@@ -41,3 +42,23 @@ class Token(BaseModel):
 
     access_token: str
     token_type: str = "bearer"
+
+
+class TokenPair(BaseModel):
+    """Schema returned after successful login."""
+
+    access_token: str
+    refresh_token: str
+    token_type: str = "bearer"
+
+
+class RefreshTokenRequest(BaseModel):
+    """Schema for requesting a new access token."""
+
+    refresh_token: str
+
+
+class LogoutResponse(BaseModel):
+    """Schema returned after successful logout."""
+
+    message: str

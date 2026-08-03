@@ -37,6 +37,7 @@ def create_user(
         username=username,
         email=email,
         hashed_password=hashed_password,
+        role="user",
     )
 
     db.add(user)
