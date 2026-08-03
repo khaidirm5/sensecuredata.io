@@ -1,3 +1,5 @@
+from datetime import datetime, timezone
+
 from sqlalchemy.orm import Session
 
 from app.repositories.user import (
@@ -49,6 +51,10 @@ def authenticate_user(
 
     if not verify_password(password, user.hashed_password):
         raise ValueError("Invalid email or password.")
+
+    user.last_login = datetime.now(timezone.utc)
+    db.commit()
+    db.refresh(user)
 
     access_token = create_access_token(
         {

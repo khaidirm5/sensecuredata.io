@@ -1,4 +1,4 @@
-from sqlalchemy import Boolean, Integer, String, text
+from sqlalchemy import Boolean, CheckConstraint, DateTime, Integer, String, text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.base import Base
@@ -7,10 +7,16 @@ from app.db.base import Base
 class User(Base):
     __tablename__ = "users"
 
-    id: Mapped[int] = mapped_column(
+    __table_args__ = (
+        CheckConstraint(
+            "role IN ('admin', 'analyst', 'user')",
+            name="chk_users_role",
+        ),
+    )
+
+    id = mapped_column(
         Integer,
         primary_key=True,
-        index=True,
     )
 
     username: Mapped[str] = mapped_column(
@@ -39,4 +45,9 @@ class User(Base):
     is_active: Mapped[bool] = mapped_column(
         Boolean,
         default=True,
+    )
+
+    last_login = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
     )
