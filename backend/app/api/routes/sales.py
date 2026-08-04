@@ -3,22 +3,36 @@ from typing import Literal
 from fastapi import (
     APIRouter,
     Depends,
+    File,
     HTTPException,
     Query,
     Response,
+    UploadFile,
     status,
 )
 from sqlalchemy.orm import Session
 
 from app.db.session import get_db
 from app.repositories.sales import SalesRepository
+from app.repositories.upload_history import UploadHistoryRepository
 from app.schemas.sales import (
     SalesCreate,
     SalesListResponse,
     SalesResponse,
     SalesUpdate,
 )
+from app.schemas.upload import UploadResponse, UploadSummary
+from app.services.etl import ETLService
 from app.services.sales import SalesService
+from app.services.upload_history import UploadHistoryService
+from app.utils.etl.exceptions import (
+    ETLLoadError,
+    ETLReaderError,
+    ETLTransformationError,
+    ETLValidationError,
+)
+from app.utils.file_storage import FileStorage
+from app.utils.file_validator import FileValidator
 
 router = APIRouter(
     prefix="/sales",
@@ -31,6 +45,19 @@ def get_sales_service(
 ) -> SalesService:
     repository = SalesRepository(db)
     return SalesService(repository)
+
+
+def get_upload_history_service(
+    db: Session = Depends(get_db),
+) -> UploadHistoryService:
+    repository = UploadHistoryRepository(db)
+    return UploadHistoryService(repository)
+
+
+def get_etl_service(
+    db: Session = Depends(get_db),
+) -> ETLService:
+    return ETLService(db)
 
 
 @router.post(
@@ -100,6 +127,120 @@ def get_sales(
         sort_by=sort_by,
         order=order,
     )
+
+
+@router.post(
+    "/upload",
+    response_model=UploadResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Upload sales data",
+    description=(
+        "Upload CSV or Excel sales data and process it through the ETL pipeline."
+    ),
+)
+async def upload_sales(
+    file: UploadFile = File(...),
+    upload_service: UploadHistoryService = Depends(
+        get_upload_history_service,
+    ),
+    etl_service: ETLService = Depends(
+        get_etl_service,
+    ),
+):
+    file_path = None
+    upload = None
+    try:
+        file_type = FileValidator.validate(file)
+
+        file_path = await FileStorage.save(file)
+
+        upload = upload_service.create_upload(
+            uploaded_by=1,
+            filename=file.filename,
+            file_type=file_type,
+        )
+
+        result = etl_service.process_file(
+            file_path=file_path,
+            upload_id=upload.id,
+        )
+
+        upload = upload_service.mark_success(
+            upload,
+            total_rows=result.total_rows,
+            valid_rows=result.valid_rows,
+            invalid_rows=result.invalid_rows,
+        )
+
+        return UploadResponse(
+            message="Sales data uploaded successfully.",
+            upload_id=upload.id,
+            filename=upload.filename,
+            file_type=upload.file_type,
+            status=upload.status,
+            uploaded_at=upload.uploaded_at,
+            summary=UploadSummary(
+                total_rows=result.total_rows,
+                valid_rows=result.valid_rows,
+                invalid_rows=result.invalid_rows,
+                duplicate_rows=result.duplicate_rows,
+            ),
+        )
+
+    except (
+        ETLReaderError,
+        ETLValidationError,
+        ETLTransformationError,
+        ETLLoadError,
+    ) as exc:
+        if "upload" in locals():
+            upload_service.mark_failed(
+                upload,
+                str(exc),
+            )
+
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(exc),
+        )
+
+    except ValueError as exc:
+        if "upload" in locals():
+            upload_service.mark_failed(
+                upload,
+                str(exc),
+            )
+
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(exc),
+        )
+
+    except Exception as exc:
+        if "upload" in locals():
+            upload_service.mark_failed(
+                upload,
+                str(exc),
+            )
+
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Unexpected server error.",
+        )
+    except Exception as exc:
+        if upload is not None:
+            upload_service.mark_failed(
+                upload,
+                str(exc),
+            )
+
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Unexpected server error.",
+        ) from exc
+    finally:
+        if file_path is not None:
+            FileStorage.delete(file_path)
 
 
 @router.get(

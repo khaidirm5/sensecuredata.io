@@ -1,0 +1,6 @@
+invoice_number,order_date,product_name,category,quantity,unit_price,region
+INV-100001,2026-08-05,Dell XPS 13,Laptop,2,23000000,Jakarta
+INV-100002,2026-08-05,MacBook Air,Laptop,1,18000000,Bandung
+INV-100003,2026-08-05,Logitech MX Master 3,Accessories,5,1500000,Surabaya
+INV-100004,2026-08-05,Samsung Monitor 27,Monitor,3,4200000,Medan
+INV-100005,2026-08-05,Lenovo ThinkPad,Laptop,2,21000000,Yogyakarta
