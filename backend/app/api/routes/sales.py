@@ -1,10 +1,20 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from typing import Literal
+
+from fastapi import (
+    APIRouter,
+    Depends,
+    HTTPException,
+    Query,
+    Response,
+    status,
+)
 from sqlalchemy.orm import Session
 
 from app.db.session import get_db
 from app.repositories.sales import SalesRepository
 from app.schemas.sales import (
     SalesCreate,
+    SalesListResponse,
     SalesResponse,
     SalesUpdate,
 )
@@ -25,10 +35,11 @@ def get_sales_service(
 
 @router.post(
     "/",
-    summary="Create a new sales record",
-    description="Create a new sales record and store it in the database.",
     response_model=SalesResponse,
     status_code=status.HTTP_201_CREATED,
+    summary="Create a new sales record",
+    description="Create a new sales record in the database.",
+    response_description="Created sales record.",
 )
 def create_sale(
     data: SalesCreate,
@@ -39,21 +50,64 @@ def create_sale(
 
 @router.get(
     "/",
-    summary="List sales records",
-    description="Retrieve all sales records from the database.",
-    response_model=list[SalesResponse],
+    response_model=SalesListResponse,
+    summary="Get sales records",
+    description=(
+        "Retrieve sales records with pagination, search, filtering, and sorting."
+    ),
+    response_description="Paginated sales records.",
 )
 def get_sales(
+    page: int = Query(
+        default=1,
+        ge=1,
+        description="Page number.",
+    ),
+    limit: int = Query(
+        default=20,
+        ge=1,
+        le=100,
+        description="Number of records per page.",
+    ),
+    search: str | None = Query(
+        default=None,
+        description="Search by invoice number, product name, category, or region.",
+    ),
+    category: str | None = Query(
+        default=None,
+        description="Filter by category.",
+    ),
+    region: str | None = Query(
+        default=None,
+        description="Filter by region.",
+    ),
+    sort_by: str = Query(
+        default="order_date",
+        description="Field used for sorting.",
+    ),
+    order: Literal["asc", "desc"] = Query(
+        default="desc",
+        description="Sort direction.",
+    ),
     service: SalesService = Depends(get_sales_service),
 ):
-    return service.get_sales()
+    return service.get_sales(
+        page=page,
+        limit=limit,
+        search=search,
+        category=category,
+        region=region,
+        sort_by=sort_by,
+        order=order,
+    )
 
 
 @router.get(
     "/{sale_id}",
-    summary="Get a sales record by ID",
-    description="Retrieve a single sales record using its unique ID.",
     response_model=SalesResponse,
+    summary="Get a sales record by ID",
+    description="Retrieve a single sales record by its ID.",
+    response_description="Sales record.",
 )
 def get_sale(
     sale_id: int,
@@ -72,9 +126,10 @@ def get_sale(
 
 @router.put(
     "/{sale_id}",
-    summary="Update a sales record",
-    description="Update an existing sales record by its ID.",
     response_model=SalesResponse,
+    summary="Update a sales record",
+    description="Update an existing sales record.",
+    response_description="Updated sales record.",
 )
 def update_sale(
     sale_id: int,
@@ -97,9 +152,9 @@ def update_sale(
 
 @router.delete(
     "/{sale_id}",
-    summary="Delete a sales record",
-    description="Delete an existing sales record by its ID.",
     status_code=status.HTTP_204_NO_CONTENT,
+    summary="Delete a sales record",
+    description="Delete a sales record by its ID.",
 )
 def delete_sale(
     sale_id: int,
@@ -112,3 +167,5 @@ def delete_sale(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Sale not found",
         )
+
+    return Response(status_code=status.HTTP_204_NO_CONTENT)

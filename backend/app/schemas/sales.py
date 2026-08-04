@@ -37,3 +37,17 @@ class SalesResponse(SalesBase):
     updated_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class Pagination(BaseModel):
+    page: int
+    limit: int
+    total: int
+    total_pages: int
+    has_next: bool
+    has_previous: bool
+
+
+class SalesListResponse(BaseModel):
+    items: list[SalesResponse]
+    pagination: Pagination
