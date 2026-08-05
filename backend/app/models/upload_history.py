@@ -10,7 +10,11 @@ from sqlalchemy import (
     Text,
     text,
 )
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import (
+    Mapped,
+    mapped_column,
+    relationship,
+)
 
 from app.db.base import Base
 
@@ -105,4 +109,10 @@ class UploadHistory(Base):
         server_default=text("CURRENT_TIMESTAMP"),
         onupdate=text("CURRENT_TIMESTAMP"),
         nullable=False,
+    )
+
+    security_scans = relationship(
+        "SecurityScan",
+        back_populates="upload",
+        cascade="all, delete-orphan",
     )
