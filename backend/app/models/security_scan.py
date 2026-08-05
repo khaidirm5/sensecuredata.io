@@ -1,22 +1,22 @@
+from datetime import datetime
+
 from sqlalchemy import (
     JSON,
     BigInteger,
     Boolean,
     CheckConstraint,
+    DateTime,
     ForeignKey,
     Integer,
     String,
+    func,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
-from app.models.base import TimestampMixin
 
 
-class SecurityScan(
-    TimestampMixin,
-    Base,
-):
+class SecurityScan(Base):
     __tablename__ = "security_scans"
 
     __table_args__ = (
@@ -127,6 +127,12 @@ class SecurityScan(
     scanner_version: Mapped[str] = mapped_column(
         String(20),
         default="v1.0",
+        nullable=False,
+    )
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
         nullable=False,
     )
 

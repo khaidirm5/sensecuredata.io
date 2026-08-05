@@ -11,6 +11,15 @@ from app.schemas.sales import (
     SalesResponse,
     SalesUpdate,
 )
+from app.schemas.security_scan import (
+    RiskDistributionResponse,
+    SecurityScanCreate,
+    SecurityScanListResponse,
+    SecurityScanResponse,
+    SecurityScanSummaryResponse,
+    SecurityScanUpdate,
+    StatusDistributionResponse,
+)
 from app.schemas.upload import (
     UploadResponse,
     UploadSummary,
@@ -18,14 +27,21 @@ from app.schemas.upload import (
 
 __all__ = [
     "DashboardSummaryResponse",
+    "DashboardCategoryResponse",
+    "DashboardRegionResponse",
+    "DashboardMonthlyResponse",
+    "DashboardTopProductResponse",
     "ErrorResponse",
     "SalesCreate",
     "SalesResponse",
     "SalesUpdate",
     "UploadResponse",
     "UploadSummary",
-    "DashboardCategoryResponse",
-    "DashboardRegionResponse",
-    "DashboardMonthlyResponse",
-    "DashboardTopProductResponse",
+    "SecurityScanCreate",
+    "SecurityScanUpdate",
+    "SecurityScanResponse",
+    "SecurityScanListResponse",
+    "SecurityScanSummaryResponse",
+    "RiskDistributionResponse",
+    "StatusDistributionResponse",
 ]
