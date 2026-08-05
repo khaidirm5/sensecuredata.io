@@ -1,4 +1,10 @@
-from app.schemas.dashboard import DashboardSummaryResponse
+from app.schemas.dashboard import (
+    DashboardCategoryResponse,
+    DashboardMonthlyResponse,
+    DashboardRegionResponse,
+    DashboardSummaryResponse,
+    DashboardTopProductResponse,
+)
 from app.schemas.error import ErrorResponse
 from app.schemas.sales import (
     SalesCreate,
@@ -18,4 +24,8 @@ __all__ = [
     "SalesUpdate",
     "UploadResponse",
     "UploadSummary",
+    "DashboardCategoryResponse",
+    "DashboardRegionResponse",
+    "DashboardMonthlyResponse",
+    "DashboardTopProductResponse",
 ]
