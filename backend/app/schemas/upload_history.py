@@ -3,8 +3,9 @@ from datetime import datetime
 from pydantic import BaseModel, ConfigDict
 
 
-class UploadResponse(BaseModel):
+class UploadHistoryResponse(BaseModel):
     id: int
+    uploaded_by: int
     filename: str
     file_type: str
     total_rows: int
@@ -18,3 +19,8 @@ class UploadResponse(BaseModel):
     model_config = ConfigDict(
         from_attributes=True,
     )
+
+
+class UploadHistoryListResponse(BaseModel):
+    total: int
+    items: list[UploadHistoryResponse]

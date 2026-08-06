@@ -193,19 +193,14 @@ async def upload_sales(
         ETLTransformationError,
         ETLLoadError,
     ) as exc:
-        if "upload" in locals():
+        if upload is not None:
             upload_service.mark_failed(
                 upload,
                 str(exc),
             )
-
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(exc),
-        )
 
     except ValueError as exc:
-        if "upload" in locals():
+        if upload is not None:
             upload_service.mark_failed(
                 upload,
                 str(exc),
@@ -216,17 +211,6 @@ async def upload_sales(
             detail=str(exc),
         )
 
-    except Exception as exc:
-        if "upload" in locals():
-            upload_service.mark_failed(
-                upload,
-                str(exc),
-            )
-
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Unexpected server error.",
-        )
     except Exception as exc:
         if upload is not None:
             upload_service.mark_failed(

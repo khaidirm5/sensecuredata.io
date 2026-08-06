@@ -1,5 +1,9 @@
 from app.models.upload_history import UploadHistory
 from app.repositories.upload_history import UploadHistoryRepository
+from app.schemas.upload_history import (
+    UploadHistoryListResponse,
+    UploadHistoryResponse,
+)
 
 
 class UploadHistoryService:
@@ -54,3 +58,68 @@ class UploadHistoryService:
         upload.error_message = error_message
 
         return self.repository.update(upload)
+
+    def get_upload(
+        self,
+        upload_id: int,
+    ) -> UploadHistoryResponse:
+        upload = self.repository.get_by_id(upload_id)
+
+        if upload is None:
+            raise ValueError(
+                "Upload history not found.",
+            )
+
+        return UploadHistoryResponse.model_validate(
+            upload,
+        )
+
+    def list_uploads(
+        self,
+        page: int = 1,
+        limit: int = 20,
+    ) -> UploadHistoryListResponse:
+        skip = (page - 1) * limit
+
+        uploads = self.repository.get_all(
+            skip=skip,
+            limit=limit,
+        )
+
+        total = self.repository.count()
+
+        return UploadHistoryListResponse(
+            total=total,
+            items=[
+                UploadHistoryResponse.model_validate(
+                    upload,
+                )
+                for upload in uploads
+            ],
+        )
+
+    def get_latest_uploads(
+        self,
+        limit: int = 10,
+    ) -> list[UploadHistoryResponse]:
+        uploads = self.repository.get_latest(limit)
+
+        return [
+            UploadHistoryResponse.model_validate(
+                upload,
+            )
+            for upload in uploads
+        ]
+
+    def delete_upload(
+        self,
+        upload_id: int,
+    ) -> None:
+        upload = self.repository.get_by_id(upload_id)
+
+        if upload is None:
+            raise ValueError(
+                "Upload history not found.",
+            )
+
+        self.repository.delete(upload)
