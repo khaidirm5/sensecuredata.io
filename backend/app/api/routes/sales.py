@@ -14,6 +14,7 @@ from sqlalchemy.orm import Session
 
 from app.db.session import get_db
 from app.repositories.sales import SalesRepository
+from app.repositories.security_scan import SecurityScanRepository
 from app.repositories.upload_history import UploadHistoryRepository
 from app.schemas.sales import (
     SalesCreate,
@@ -21,9 +22,11 @@ from app.schemas.sales import (
     SalesResponse,
     SalesUpdate,
 )
+from app.schemas.security_scan import SecurityScanCreate
 from app.schemas.upload import UploadResponse, UploadSummary
 from app.services.etl import ETLService
 from app.services.sales import SalesService
+from app.services.security_scan import SecurityScanService
 from app.services.upload_history import UploadHistoryService
 from app.utils.etl.exceptions import (
     ETLLoadError,
@@ -33,6 +36,7 @@ from app.utils.etl.exceptions import (
 )
 from app.utils.file_storage import FileStorage
 from app.utils.file_validator import FileValidator
+from app.utils.security.security_engine import SecurityEngine
 
 router = APIRouter(
     prefix="/sales",
@@ -52,6 +56,13 @@ def get_upload_history_service(
 ) -> UploadHistoryService:
     repository = UploadHistoryRepository(db)
     return UploadHistoryService(repository)
+
+
+def get_security_scan_service(
+    db: Session = Depends(get_db),
+) -> SecurityScanService:
+    repository = SecurityScanRepository(db)
+    return SecurityScanService(repository)
 
 
 def get_etl_service(
@@ -143,6 +154,9 @@ async def upload_sales(
     upload_service: UploadHistoryService = Depends(
         get_upload_history_service,
     ),
+    security_service: SecurityScanService = Depends(
+        get_security_scan_service,
+    ),
     etl_service: ETLService = Depends(
         get_etl_service,
     ),
@@ -158,6 +172,21 @@ async def upload_sales(
             uploaded_by=1,
             filename=file.filename,
             file_type=file_type,
+        )
+
+        security_engine = SecurityEngine(
+            etl_service.db,
+        )
+
+        scan_result = security_engine.scan(
+            file_path,
+        )
+
+        security_service.create_scan(
+            SecurityScanCreate(
+                upload_id=upload.id,
+                **scan_result,
+            )
         )
 
         result = etl_service.process_file(

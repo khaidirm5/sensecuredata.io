@@ -36,6 +36,7 @@ class SecurityScan(Base):
             """
             threat_type IN (
                 'NONE',
+                'DUPLICATE',
                 'MALWARE',
                 'MACRO',
                 'EXECUTABLE',
