@@ -14,7 +14,7 @@ This structure keeps the project relatively simple to develop and maintain while
 
 The following diagram shows the current application structure and the main relationships between the frontend, backend modules, shared backend layers, and database.
 
-![Sentinel Secure Data Intelligence Platform System Architecture](../images/system-architecture.svg)
+![Sentinel Secure Data Intelligence Platform System Architecture](../images/system-architecture.png)
 
 The diagram represents the current project direction. Some components, particularly the AI module, may still be under development and should not be considered fully implemented unless the corresponding functionality is available in the application.
 
