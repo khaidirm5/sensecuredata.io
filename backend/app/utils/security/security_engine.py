@@ -42,11 +42,8 @@ class SecurityEngine:
             "extension": file.suffix.lower(),
             "file_size": file.stat().st_size,
             "is_duplicate": is_duplicate,
-            "risk_level": analysis["risk_level"],
-            "security_score": analysis["security_score"],
             "status": "COMPLETED",
-            "scan_details": analysis["scan_details"],
-            "threat_type": analysis["threat_type"],
             "scan_duration_ms": 0,
             "scanner_version": "v1.0",
+            **analysis,
         }

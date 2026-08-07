@@ -6,11 +6,13 @@ from app.repositories.user import (
     create_user,
     get_user_by_email,
     get_user_by_username,
+    get_users,
 )
 from app.schemas.user import (
     Token,
     TokenPair,
     UserCreate,
+    UserListResponse,
 )
 from app.security.hash import hash_password, verify_password
 from app.security.jwt import (
@@ -92,4 +94,34 @@ def refresh_access_token(
 
     return Token(
         access_token=access_token,
+    )
+
+
+def get_users_service(
+    db: Session,
+    *,
+    page: int,
+    limit: int,
+    search: str | None = None,
+    role: str | None = None,
+    sort_by: str = "username",
+    order: str = "asc",
+) -> UserListResponse:
+    """Retrieve users with pagination, search, filtering, and sorting."""
+
+    users, total = get_users(
+        db=db,
+        page=page,
+        limit=limit,
+        search=search,
+        role=role,
+        sort_by=sort_by,
+        order=order,
+    )
+
+    return UserListResponse(
+        items=users,
+        total=total,
+        page=page,
+        limit=limit,
     )

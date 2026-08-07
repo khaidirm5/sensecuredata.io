@@ -1,4 +1,4 @@
-from sqlalchemy import select
+from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session
 
 from app.models.user import User
@@ -45,3 +45,53 @@ def create_user(
     db.refresh(user)
 
     return user
+
+
+def get_users(
+    db: Session,
+    *,
+    page: int,
+    limit: int,
+    search: str | None = None,
+    role: str | None = None,
+    sort_by: str = "username",
+    order: str = "asc",
+) -> tuple[list[User], int]:
+    """Retrieve users with pagination, search, filtering, and sorting."""
+
+    stmt = select(User)
+    count_stmt = select(func.count()).select_from(User)
+
+    if search:
+        condition = or_(
+            User.username.ilike(f"%{search}%"),
+            User.email.ilike(f"%{search}%"),
+        )
+
+        stmt = stmt.where(condition)
+        count_stmt = count_stmt.where(condition)
+
+    if role:
+        stmt = stmt.where(User.role == role)
+        count_stmt = count_stmt.where(User.role == role)
+
+    sortable_columns = {
+        "username": User.username,
+        "email": User.email,
+        "created_at": User.created_at,
+    }
+
+    sort_column = sortable_columns.get(sort_by, User.username)
+
+    if order == "desc":
+        stmt = stmt.order_by(sort_column.desc())
+    else:
+        stmt = stmt.order_by(sort_column.asc())
+
+    total = db.scalar(count_stmt) or 0
+
+    stmt = stmt.offset((page - 1) * limit).limit(limit)
+
+    users = db.scalars(stmt).all()
+
+    return users, total

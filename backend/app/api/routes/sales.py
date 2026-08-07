@@ -12,7 +12,9 @@ from fastapi import (
 )
 from sqlalchemy.orm import Session
 
+from app.api.deps import get_current_user, require_roles
 from app.db.session import get_db
+from app.models.user import User
 from app.repositories.sales import SalesRepository
 from app.repositories.security_scan import SecurityScanRepository
 from app.repositories.upload_history import UploadHistoryRepository
@@ -81,6 +83,12 @@ def get_etl_service(
 )
 def create_sale(
     data: SalesCreate,
+    _: User = Depends(
+        require_roles(
+            "admin",
+            "analyst",
+        ),
+    ),
     service: SalesService = Depends(get_sales_service),
 ):
     return service.create_sale(data)
@@ -96,6 +104,7 @@ def create_sale(
     response_description="Paginated sales records.",
 )
 def get_sales(
+    _: User = Depends(get_current_user),
     page: int = Query(
         default=1,
         ge=1,
@@ -151,6 +160,7 @@ def get_sales(
 )
 async def upload_sales(
     file: UploadFile = File(...),
+    current_user: User = Depends(get_current_user),
     upload_service: UploadHistoryService = Depends(
         get_upload_history_service,
     ),
@@ -169,7 +179,7 @@ async def upload_sales(
         file_path = await FileStorage.save(file)
 
         upload = upload_service.create_upload(
-            uploaded_by=1,
+            uploaded_by=current_user.id,
             filename=file.filename,
             file_type=file_type,
         )
@@ -265,6 +275,7 @@ async def upload_sales(
 )
 def get_sale(
     sale_id: int,
+    _: User = Depends(get_current_user),
     service: SalesService = Depends(get_sales_service),
 ):
     sale = service.get_sale(sale_id)
@@ -288,6 +299,12 @@ def get_sale(
 def update_sale(
     sale_id: int,
     data: SalesUpdate,
+    _: User = Depends(
+        require_roles(
+            "admin",
+            "analyst",
+        ),
+    ),
     service: SalesService = Depends(get_sales_service),
 ):
     sale = service.update_sale(
@@ -312,6 +329,11 @@ def update_sale(
 )
 def delete_sale(
     sale_id: int,
+    _: User = Depends(
+        require_roles(
+            "admin",
+        ),
+    ),
     service: SalesService = Depends(get_sales_service),
 ):
     deleted = service.delete_sale(sale_id)

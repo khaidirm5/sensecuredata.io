@@ -1,0 +1,9 @@
+invoice_number,order_date,product_name,category,quantity,unit_price,region
+INV-200001,2026-08-06,HP EliteBook 840,Laptop,2,19500000,Jakarta
+INV-200002,2026-08-06,Apple Magic Keyboard,Accessories,4,2200000,Bandung
+INV-200003,2026-08-06,Dell UltraSharp 27,Monitor,2,6500000,Surabaya
+INV-200004,2026-08-06,ASUS ROG Zephyrus,Laptop,1,28500000,Semarang
+INV-200005,2026-08-06,Canon PIXMA G4770,Printer,3,3900000,Makassar
+INV-200006,2026-08-06,Kingston NV3 1TB,Storage,6,1450000,Palembang
+INV-200007,2026-08-06,LG UltraWide 34,Monitor,1,8900000,Batam
+INV-200008,2026-08-06,Microsoft Surface Laptop,Laptop,2,24500000,Denpasar

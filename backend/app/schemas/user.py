@@ -62,3 +62,24 @@ class LogoutResponse(BaseModel):
     """Schema returned after successful logout."""
 
     message: str
+
+
+class UserListItem(BaseModel):
+    """Schema for a single user in the user list."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    username: str
+    email: EmailStr
+    role: str
+    is_active: bool
+
+
+class UserListResponse(BaseModel):
+    """Schema for paginated user list."""
+
+    items: list[UserListItem]
+    total: int
+    page: int
+    limit: int
