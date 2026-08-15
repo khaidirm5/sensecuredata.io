@@ -5,6 +5,7 @@ from app.repositories.dashboard import DashboardRepository
 from app.schemas.dashboard import (
     DashboardCategoryResponse,
     DashboardMonthlyResponse,
+    DashboardRecentSaleResponse,
     DashboardRegionResponse,
     DashboardSummaryResponse,
     DashboardTopProductResponse,
@@ -79,7 +80,7 @@ class DashboardService:
         end_date: date | None = None,
         category: str | None = None,
         region: str | None = None,
-    ) -> list[DashboardCategoryResponse]:
+    ) -> list[DashboardRegionResponse]:
         rows = self.repository.get_revenue_by_region(
             start_date,
             end_date,
@@ -104,7 +105,7 @@ class DashboardService:
         end_date: date | None = None,
         category: str | None = None,
         region: str | None = None,
-    ) -> list[DashboardCategoryResponse]:
+    ) -> list[DashboardMonthlyResponse]:
         rows = self.repository.get_monthly_revenue(
             start_date,
             end_date,
@@ -144,6 +145,37 @@ class DashboardService:
                 product_name=row.product_name,
                 total_quantity=row.total_quantity,
                 total_revenue=row.total_revenue,
+            )
+            for row in rows
+        ]
+
+    def get_recent_sales(
+        self,
+        start_date: date | None = None,
+        end_date: date | None = None,
+        category: str | None = None,
+        region: str | None = None,
+        limit: int = 5,
+    ) -> list[DashboardRecentSaleResponse]:
+        rows = self.repository.get_recent_sales(
+            start_date,
+            end_date,
+            category,
+            region,
+            limit,
+        )
+
+        return [
+            DashboardRecentSaleResponse(
+                invoice_number=row.invoice_number,
+                order_date=row.order_date.isoformat(),
+                product_name=row.product_name,
+                category=row.category,
+                region=row.region,
+                quantity=row.quantity,
+                total_price=row.total_price.quantize(
+                    Decimal("0.01"),
+                ),
             )
             for row in rows
         ]

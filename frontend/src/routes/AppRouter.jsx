@@ -1,48 +1,29 @@
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 
-function Placeholder({ title }) {
-  return (
-    <div className="p-8 text-2xl font-semibold">
-      {title}
-    </div>
-  );
-}
+import MainLayout from "../components/layout/MainLayout";
+import DashboardPage from "../pages/DashboardPage";
+import LoginPage from "../pages/LoginPage";
+import NotFoundPage from "../pages/NotFoundPage";
+import SalesPage from "../pages/SalesPage";
+import SecurityPage from "../pages/SecurityPage";
+import UploadPage from "../pages/UploadPage";
 
 export default function AppRouter() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<Navigate to="/login" replace />} />
+        <Route path="/" element={<Navigate to="/dashboard" replace />} />
 
-        <Route
-          path="/login"
-          element={<Placeholder title="Login Page" />}
-        />
+        <Route path="/login" element={<LoginPage />} />
 
-        <Route
-          path="/dashboard"
-          element={<Placeholder title="Dashboard Page" />}
-        />
+        <Route element={<MainLayout />}>
+          <Route path="/dashboard" element={<DashboardPage />} />
+          <Route path="/sales" element={<SalesPage />} />
+          <Route path="/upload" element={<UploadPage />} />
+          <Route path="/security" element={<SecurityPage />} />
+        </Route>
 
-        <Route
-          path="/sales"
-          element={<Placeholder title="Sales Page" />}
-        />
-
-        <Route
-          path="/upload"
-          element={<Placeholder title="Upload Page" />}
-        />
-
-        <Route
-          path="/security"
-          element={<Placeholder title="Security Page" />}
-        />
-
-        <Route
-          path="*"
-          element={<Placeholder title="404 Not Found" />}
-        />
+        <Route path="*" element={<NotFoundPage />} />
       </Routes>
     </BrowserRouter>
   );

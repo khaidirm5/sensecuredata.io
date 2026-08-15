@@ -233,3 +233,36 @@ class DashboardRepository:
         ).limit(limit)
 
         return self.db.execute(stmt).all()
+
+    def get_recent_sales(
+        self,
+        start_date: date | None = None,
+        end_date: date | None = None,
+        category: str | None = None,
+        region: str | None = None,
+        limit: int = 5,
+    ):
+        stmt = select(
+            SalesData.invoice_number,
+            SalesData.order_date,
+            SalesData.product_name,
+            SalesData.category,
+            SalesData.region,
+            SalesData.quantity,
+            SalesData.total_price,
+        )
+
+        stmt = self._apply_filters(
+            stmt,
+            start_date,
+            end_date,
+            category,
+            region,
+        )
+
+        stmt = stmt.order_by(
+            desc(SalesData.order_date),
+            desc(SalesData.id),
+        ).limit(limit)
+
+        return self.db.execute(stmt).all()

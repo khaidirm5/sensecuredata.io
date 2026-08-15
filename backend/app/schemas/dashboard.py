@@ -32,3 +32,13 @@ class DashboardTopProductResponse(BaseModel):
     product_name: str
     total_quantity: int
     total_revenue: Decimal
+
+
+class DashboardRecentSaleResponse(BaseModel):
+    invoice_number: str
+    order_date: str
+    product_name: str
+    category: str
+    region: str | None
+    quantity: int
+    total_price: Decimal

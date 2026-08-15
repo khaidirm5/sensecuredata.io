@@ -99,7 +99,8 @@ def create_sale(
     response_model=SalesListResponse,
     summary="Get sales records",
     description=(
-        "Retrieve sales records with pagination, search, filtering, and sorting."
+        "Retrieve sales records with pagination, "
+        "case-insensitive partial search, filtering, and sorting."
     ),
     response_description="Paginated sales records.",
 )
@@ -118,7 +119,10 @@ def get_sales(
     ),
     search: str | None = Query(
         default=None,
-        description="Search by invoice number, product name, category, or region.",
+        description=(
+            "Partial and case-insensitive search by "
+            "invoice number, product name, category, or region."
+        ),
     ),
     category: str | None = Query(
         default=None,
@@ -173,6 +177,7 @@ async def upload_sales(
 ):
     file_path = None
     upload = None
+
     try:
         file_type = FileValidator.validate(file)
 
@@ -238,6 +243,11 @@ async def upload_sales(
                 str(exc),
             )
 
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(exc),
+        ) from exc
+
     except ValueError as exc:
         if upload is not None:
             upload_service.mark_failed(
@@ -248,7 +258,7 @@ async def upload_sales(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(exc),
-        )
+        ) from exc
 
     except Exception as exc:
         if upload is not None:
@@ -261,6 +271,7 @@ async def upload_sales(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Unexpected server error.",
         ) from exc
+
     finally:
         if file_path is not None:
             FileStorage.delete(file_path)
@@ -344,4 +355,6 @@ def delete_sale(
             detail="Sale not found",
         )
 
-    return Response(status_code=status.HTTP_204_NO_CONTENT)
+    return Response(
+        status_code=status.HTTP_204_NO_CONTENT,
+    )

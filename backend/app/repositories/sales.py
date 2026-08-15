@@ -1,4 +1,4 @@
-from sqlalchemy import Select, delete, func, or_, select
+from sqlalchemy import Select, asc, desc, func, or_, select
 from sqlalchemy.orm import Session
 
 from app.models.sales_data import SalesData
@@ -6,14 +6,19 @@ from app.schemas.sales import SalesCreate, SalesUpdate
 
 
 class SalesRepository:
-    def __init__(self, db: Session):
+    def __init__(
+        self,
+        db: Session,
+    ):
         self.db = db
 
     def create(
         self,
         data: SalesCreate,
     ) -> SalesData:
-        sale = SalesData(**data.model_dump())
+        sale = SalesData(
+            **data.model_dump(),
+        )
 
         self.db.add(sale)
         self.db.commit()
@@ -25,11 +30,50 @@ class SalesRepository:
         self,
         sale_id: int,
     ) -> SalesData | None:
-        stmt: Select[tuple[SalesData]] = select(SalesData).where(
-            SalesData.id == sale_id
+        stmt = select(SalesData).where(
+            SalesData.id == sale_id,
         )
 
-        return self.db.scalar(stmt)
+        return self.db.execute(stmt).scalar_one_or_none()
+
+    def _apply_filters(
+        self,
+        stmt: Select,
+        search: str | None = None,
+        category: str | None = None,
+        region: str | None = None,
+    ) -> Select:
+        if search:
+            search_pattern = f"%{search.strip()}%"
+
+            stmt = stmt.where(
+                or_(
+                    SalesData.invoice_number.ilike(search_pattern),
+                    SalesData.product_name.ilike(search_pattern),
+                    SalesData.category.ilike(search_pattern),
+                    SalesData.region.ilike(search_pattern),
+                )
+            )
+
+        if category:
+            category_pattern = f"%{category.strip()}%"
+
+            stmt = stmt.where(
+                SalesData.category.ilike(
+                    category_pattern,
+                ),
+            )
+
+        if region:
+            region_pattern = f"%{region.strip()}%"
+
+            stmt = stmt.where(
+                SalesData.region.ilike(
+                    region_pattern,
+                ),
+            )
+
+        return stmt
 
     def get_all(
         self,
@@ -42,49 +86,36 @@ class SalesRepository:
         sort_by: str = "order_date",
         order: str = "desc",
     ) -> list[SalesData]:
-
-        stmt: Select[tuple[SalesData]] = select(SalesData)
-
-        if search:
-            keyword = f"%{search}%"
-
-            stmt = stmt.where(
-                or_(
-                    SalesData.invoice_number.ilike(keyword),
-                    SalesData.product_name.ilike(keyword),
-                    SalesData.category.ilike(keyword),
-                    SalesData.region.ilike(keyword),
-                )
-            )
-
-        if category:
-            stmt = stmt.where(SalesData.category == category)
-
-        if region:
-            stmt = stmt.where(SalesData.region == region)
-
-        allowed_sort = {
-            "order_date": SalesData.order_date,
-            "invoice_number": SalesData.invoice_number,
-            "product_name": SalesData.product_name,
-            "quantity": SalesData.quantity,
-            "total_price": SalesData.total_price,
-            "region": SalesData.region,
-            "category": SalesData.category,
-            "unit_price": SalesData.unit_price,
-            "created_at": SalesData.created_at,
-        }
-
-        column = allowed_sort.get(
+        sort_column = getattr(
+            SalesData,
             sort_by,
             SalesData.order_date,
         )
 
-        stmt = stmt.order_by(column.desc() if order.lower() == "desc" else column.asc())
+        if order == "asc":
+            sort_expression = asc(sort_column)
+        else:
+            sort_expression = desc(sort_column)
 
-        stmt = stmt.offset(skip).limit(limit)
+        stmt = select(SalesData)
 
-        return list(self.db.scalars(stmt).all())
+        stmt = self._apply_filters(
+            stmt,
+            search=search,
+            category=category,
+            region=region,
+        )
+
+        stmt = (
+            stmt.order_by(
+                sort_expression,
+                desc(SalesData.id),
+            )
+            .offset(skip)
+            .limit(limit)
+        )
+
+        return list(self.db.execute(stmt).scalars().all())
 
     def count(
         self,
@@ -93,35 +124,32 @@ class SalesRepository:
         category: str | None = None,
         region: str | None = None,
     ) -> int:
-        stmt = select(func.count()).select_from(SalesData)
+        stmt = select(func.count(SalesData.id))
 
-        if search:
-            keyword = f"%{search}"
+        stmt = self._apply_filters(
+            stmt,
+            search=search,
+            category=category,
+            region=region,
+        )
 
-            stmt = stmt.where(
-                or_(
-                    SalesData.invoice_number.ilike(keyword),
-                    SalesData.product_name.ilike(keyword),
-                    SalesData.category.ilike(keyword),
-                    SalesData.region.ilike(keyword),
-                )
-            )
-
-        if category:
-            stmt = stmt.where(SalesData.category == category)
-
-        if region:
-            stmt = stmt.where(SalesData.region == region)
-
-        return self.db.scalar(stmt) or 0
+        return self.db.execute(stmt).scalar_one()
 
     def update(
         self,
         sale: SalesData,
         data: SalesUpdate,
     ) -> SalesData:
-        for key, value in data.model_dump(exclude_unset=True).items():
-            setattr(sale, key, value)
+        update_data = data.model_dump(
+            exclude_unset=True,
+        )
+
+        for field, value in update_data.items():
+            setattr(
+                sale,
+                field,
+                value,
+            )
 
         self.db.commit()
         self.db.refresh(sale)
@@ -132,7 +160,10 @@ class SalesRepository:
         self,
         sale_id: int,
     ) -> None:
-        stmt = delete(SalesData).where(SalesData.id == sale_id)
+        sale = self.get_by_id(sale_id)
 
-        self.db.execute(stmt)
+        if sale is None:
+            return
+
+        self.db.delete(sale)
         self.db.commit()

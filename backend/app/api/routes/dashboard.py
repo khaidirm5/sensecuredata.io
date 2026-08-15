@@ -12,6 +12,7 @@ from app.repositories.dashboard import DashboardRepository
 from app.schemas.dashboard import (
     DashboardCategoryResponse,
     DashboardMonthlyResponse,
+    DashboardRecentSaleResponse,
     DashboardRegionResponse,
     DashboardSummaryResponse,
     DashboardTopProductResponse,
@@ -193,6 +194,47 @@ def get_top_products(
     ),
 ):
     return service.get_top_products(
+        start_date,
+        end_date,
+        category,
+        region,
+        limit,
+    )
+
+
+@router.get(
+    "/recent-sales",
+    response_model=list[DashboardRecentSaleResponse],
+    summary="Recent sales",
+    description="Retrieve the latest sales transactions.",
+)
+def get_recent_sales(
+    start_date: date | None = Query(
+        default=None,
+        description="Filter by start date.",
+    ),
+    end_date: date | None = Query(
+        default=None,
+        description="Filter by end date.",
+    ),
+    category: str | None = Query(
+        default=None,
+        description="Filter by category.",
+    ),
+    region: str | None = Query(
+        default=None,
+        description="Filter by region.",
+    ),
+    limit: int = Query(
+        default=5,
+        ge=1,
+        le=100,
+    ),
+    service: DashboardService = Depends(
+        get_dashboard_service,
+    ),
+):
+    return service.get_recent_sales(
         start_date,
         end_date,
         category,
